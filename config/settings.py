@@ -5,9 +5,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API Keys (will be empty until we add them)
-RAWG_API_KEY = os.getenv('RAWG_API_KEY', '')
-TMDB_API_KEY = os.getenv('TMDB_API_KEY', '')
-GOOGLE_BOOKS_API_KEY = os.getenv('GOOGLE_BOOKS_API_KEY', '')
+RAWG_API_KEY = os.getenv('RAWG_API_KEY', 'efd4cb4ce2664817b5b5c74ab7fea75a')
+TMDB_API_KEY = os.getenv('TMDB_API_KEY', 'ad26bdddff52bb765081588444b32bc9')
+GOOGLE_BOOKS_API_KEY = os.getenv('GOOGLE_BOOKS_API_KEY', 'AIzaSyByt0VeFjJWcdEGBTvP-Ufe03tiQqRAiEU')
 
 # API Base URLs
 JIKAN_BASE_URL = 'https://api.jikan.moe/v4'
