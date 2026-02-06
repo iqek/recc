@@ -19,7 +19,7 @@ class BaseCollector(ABC):
 
     def _wait_rate_limit(self):
         """Wait between requests"""
-        time_since_last = time.time() - self.last_request_time
+        time_since_last = time.time() - self.last_req_time
         wait_time = (1.0 / self.rate_limit) - time_since_last
         
         if wait_time > 0:
@@ -59,7 +59,7 @@ class BaseCollector(ABC):
             return cached
         
         #If not in cache, make an API call
-        self._wait_for_rate_limit()
+        self._wait_rate_limit()
         
         url = f"{self.base_url}/{endpoint}"
         
