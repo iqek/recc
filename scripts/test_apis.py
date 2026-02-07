@@ -9,7 +9,7 @@ import requests
 from config.settings import *
 
 def test_jikan():
-    """Test Jikan API - Search for 'Cowboy Bebop'"""
+    """Test Jikan API"""
     print("Testing Jikan API (anime/manga)...")
     response = requests.get(f'{JIKAN_BASE_URL}/anime?q=bakemonogatari&limit=1')
     print(f"  Status: {response.status_code}")
