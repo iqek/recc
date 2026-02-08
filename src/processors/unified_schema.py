@@ -16,7 +16,7 @@ class MediaItem:
     
     # Metadata
     year: Optional[int] = None
-    rating: Optional[float] = None 
+    rating: Optional[float] = None  # between 0-10
     
     # type-specific stuff
     metadata: Dict[str, Any] = field(default_factory=dict)
