@@ -163,6 +163,3 @@ data/user/*
 # VSCode
 .vscode/
 *.code-workspace
-
-
-scripts
