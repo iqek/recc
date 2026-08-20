@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: recc
+      POSTGRES_PASSWORD: recc
+      POSTGRES_DB: recc
+    ports:
+      # Host port 5433 (not 5432) - this machine already has a native
+      # Postgres listening on 5432, and mapping onto it silently routes
+      # connections to the wrong server.
+      - '5433:5432'
+    volumes:
+      - recc-db-data:/var/lib/postgresql/data
+
+volumes:
+  recc-db-data:
