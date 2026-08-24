@@ -2,7 +2,7 @@ import { createQueue, fetchJsonWithRetry } from '../lib/httpQueue.js';
 
 // VNDB (Kana API). No key needed. Not content-filtered - includes adult titles, see README.
 const BASE_URL = 'https://api.vndb.org/kana/vn';
-const FIELDS = 'title,image.url,released,rating,tags.name,tags.category,developers.name,description';
+const FIELDS = 'title,image.url,released,rating,votecount,tags.name,tags.category,developers.name,description';
 const queue = createQueue(350);
 
 function stripBbcode(text) {
@@ -23,6 +23,7 @@ function normalize(vn) {
     creator: developers.join(', ') || null,
     year: vn.released ? Number(vn.released.slice(0, 4)) || null : null,
     rating: vn.rating ? vn.rating / 10 : null,
+    popularity: vn.votecount ?? null,
     url: `https://vndb.org/${vn.id}`,
     raw: vn,
     tags: [

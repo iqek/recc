@@ -24,6 +24,7 @@ function normalize(game) {
     creator: null,
     year: game.released ? Number(game.released.slice(0, 4)) : null,
     rating: game.rating ? game.rating * 2 : null,
+    popularity: game.added ?? null,
     url: `https://rawg.io/games/${game.slug}`,
     raw: game,
     tags: [...genreTags, ...themeTags],

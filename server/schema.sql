@@ -9,11 +9,15 @@ CREATE TABLE IF NOT EXISTS items (
   creator       TEXT,
   year          INTEGER,
   rating        REAL,
+  popularity    INTEGER,
   url           TEXT,
   raw_json      JSONB,
   cached_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (source, external_id)
 );
+
+-- CREATE TABLE IF NOT EXISTS above won't add columns to an already-existing table, so:
+ALTER TABLE items ADD COLUMN IF NOT EXISTS popularity INTEGER;
 
 -- Genres/themes/creators, used to build the recommender's tag vectors.
 CREATE TABLE IF NOT EXISTS item_tags (

@@ -39,6 +39,7 @@ async function normalize(movie) {
     creator: null,
     year: movie.release_date ? Number(movie.release_date.slice(0, 4)) || null : null,
     rating: movie.vote_average ?? null,
+    popularity: movie.vote_count ?? null,
     url: `https://www.themoviedb.org/movie/${movie.id}`,
     raw: movie,
     tags: genreTags,

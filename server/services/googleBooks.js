@@ -20,6 +20,7 @@ function normalize(volume) {
     creator: authors.join(', ') || null,
     year: info.publishedDate ? Number(info.publishedDate.slice(0, 4)) || null : null,
     rating: info.averageRating ? info.averageRating * 2 : null,
+    popularity: info.ratingsCount ?? null,
     url: info.infoLink ?? null,
     raw: volume,
     tags: [

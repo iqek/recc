@@ -4,8 +4,8 @@ import { query } from './db.js';
 
 export async function upsertItem(item) {
   const { rows } = await query(
-    `INSERT INTO items (source, external_id, title, image_url, description, creator, year, rating, url, raw_json, cached_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
+    `INSERT INTO items (source, external_id, title, image_url, description, creator, year, rating, popularity, url, raw_json, cached_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now())
      ON CONFLICT (source, external_id) DO UPDATE SET
        title = excluded.title,
        image_url = excluded.image_url,
@@ -13,6 +13,7 @@ export async function upsertItem(item) {
        creator = excluded.creator,
        year = excluded.year,
        rating = excluded.rating,
+       popularity = excluded.popularity,
        url = excluded.url,
        raw_json = excluded.raw_json,
        cached_at = now()
@@ -26,6 +27,7 @@ export async function upsertItem(item) {
       item.creator ?? null,
       item.year ?? null,
       item.rating ?? null,
+      item.popularity ?? null,
       item.url ?? null,
       item.raw ? JSON.stringify(item.raw) : null,
     ]

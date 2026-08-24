@@ -21,6 +21,7 @@ function normalize(entry, { source, creatorField, year }) {
     creator: creators.join(', ') || null,
     year,
     rating: entry.score ?? null,
+    popularity: entry.members ?? entry.scored_by ?? null,
     url: entry.url ?? null,
     raw: entry,
     tags: [...genreTags, ...themeTags, ...creators.map((c) => ({ value: c, type: 'creator' }))],

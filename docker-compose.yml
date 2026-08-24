@@ -14,5 +14,22 @@ services:
     volumes:
       - recc-db-data:/var/lib/postgresql/data
 
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PORT: 3000
+      # Inside the compose network, containers reach each other by service
+      # name ("db"), not localhost - and by the container's own port (5432),
+      # not the host-mapped one (5433) above.
+      DATABASE_URL: postgres://recc:recc@db:5432/recc
+      RAWG_API_KEY: ${RAWG_API_KEY}
+      TMDB_API_KEY: ${TMDB_API_KEY}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY}
+    ports:
+      - '3000:3000'
+
 volumes:
   recc-db-data:
