@@ -1,6 +1,4 @@
-// Groups titles like "Steins;Gate", "Steins;Gate 0", "Steins;Gate: Hiyoku Renri no Darling" under
-// one franchise key (their first couple of distinctive words) so recommendations don't get flooded
-// by one series' spinoffs and sequels at the expense of everything else.
+// Groups sequel/spinoff titles under one franchise key so they don't flood recommendations
 const STOPWORDS = new Set(['the', 'a', 'an', 'of', 'in', 'on', 'to', 'no', 'x', 'and', 'vs', 'edition']);
 
 export function franchiseKey(title) {
@@ -12,14 +10,18 @@ export function franchiseKey(title) {
   return words.slice(0, 2).join(' ');
 }
 
-/** Keeps items in their existing order, dropping any past `maxPerFranchise` for the same key. */
-export function capPerFranchise(items, keyOf, maxPerFranchise = 2) {
+/** Keeps items in order, dropping any past `max` occurrences of the same key */
+export function capPerKey(items, keyOf, max) {
   const seen = new Map();
   return items.filter((item) => {
-    const key = franchiseKey(keyOf(item));
+    const key = keyOf(item);
     const count = seen.get(key) ?? 0;
-    if (key && count >= maxPerFranchise) return false;
+    if (key && count >= max) return false;
     seen.set(key, count + 1);
     return true;
   });
+}
+
+export function capPerFranchise(items, keyOf, max = 2) {
+  return capPerKey(items, (item) => franchiseKey(keyOf(item)), max);
 }

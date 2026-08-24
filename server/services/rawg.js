@@ -1,7 +1,7 @@
 import { createQueue, fetchJsonWithRetry } from '../lib/httpQueue.js';
 import { config } from '../config.js';
 
-// RAWG. Free tier: 20k req/month, key required. List endpoint has no dev/publisher names, so we skip those.
+// RAWG. Free tier: 20k req/month, key required.
 const BASE_URL = 'https://api.rawg.io/api';
 const queue = createQueue(150);
 
@@ -37,9 +37,9 @@ function requireKey() {
   }
 }
 
-export async function searchGames(query, limit = 15) {
+export async function searchGames(query, limit = 15, page = 1) {
   requireKey();
-  const url = `${BASE_URL}/games?key=${config.rawgApiKey}&search=${encodeURIComponent(query)}&page_size=${limit}`;
+  const url = `${BASE_URL}/games?key=${config.rawgApiKey}&search=${encodeURIComponent(query)}&page_size=${limit}&page=${page}`;
   const data = await queue.enqueue(() => fetchJsonWithRetry(url));
   return (data.results ?? []).map(normalize);
 }

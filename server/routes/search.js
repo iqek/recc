@@ -10,12 +10,16 @@ searchRouter.get('/:source', async (req, res, next) => {
     assertValidSource(source);
     const q = String(req.query.q ?? '').trim();
     if (!q) return res.json({ items: [] });
+    const page = Math.max(1, Number(req.query.page) || 1);
 
-    const results = await sourceClients[source].search(q);
+    const results = await sourceClients[source].search(q, 15, page);
     const items = await Promise.all(
       results.map(async (normalized) => {
         const id = await upsertItem(normalized);
-        const [item, listIds] = await Promise.all([getItemWithTags(id), getListIdsForItem(id)]);
+        const [item, listIds] = await Promise.all([
+          getItemWithTags(req.user.id, id),
+          getListIdsForItem(req.user.id, id),
+        ]);
         return toApiItem(item, { listIds });
       })
     );

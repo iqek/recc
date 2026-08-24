@@ -7,14 +7,16 @@ import {
   getListIdsForItem,
   toApiItem,
 } from '../repo.js';
+import { refreshIfStale } from '../services/refreshStale.js';
 
 export const favoritesRouter = Router();
 
 favoritesRouter.get('/', async (req, res, next) => {
   try {
-    const favorites = await getFavorites();
+    const favorites = await getFavorites(req.user.id);
+    favorites.forEach(refreshIfStale);
     const items = await Promise.all(
-      favorites.map(async (row) => toApiItem(row, { listIds: await getListIdsForItem(row.id) }))
+      favorites.map(async (row) => toApiItem(row, { listIds: await getListIdsForItem(req.user.id, row.id) }))
     );
     res.json({ items });
   } catch (err) {
@@ -25,7 +27,7 @@ favoritesRouter.get('/', async (req, res, next) => {
 favoritesRouter.put('/:itemId', async (req, res, next) => {
   try {
     const itemId = Number(req.params.itemId);
-    const item = await getItemWithTags(itemId);
+    const item = await getItemWithTags(req.user.id, itemId);
     if (!item) return res.status(404).json({ error: 'Item not found.' });
 
     const { isFavorite, userRating } = req.body;
@@ -36,10 +38,13 @@ favoritesRouter.put('/:itemId', async (req, res, next) => {
       }
     }
 
-    await setFavorite(itemId, Boolean(isFavorite), userRating ?? null);
+    await setFavorite(req.user.id, itemId, Boolean(isFavorite), userRating ?? null);
 
-    const [userItem, listIds] = await Promise.all([getUserItem(itemId), getListIdsForItem(itemId)]);
-    res.json({ item: toApiItem({ ...item, ...userItem }, { listIds }) });
+    const [userItem, listIds] = await Promise.all([
+      getUserItem(req.user.id, itemId),
+      getListIdsForItem(req.user.id, itemId),
+    ]);
+    res.json({ item: toApiItem(item, { favorite: userItem ?? {}, listIds }) });
   } catch (err) {
     next(err);
   }

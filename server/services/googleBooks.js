@@ -6,6 +6,15 @@ const BASE_URL = 'https://www.googleapis.com/books/v1/volumes';
 const queue = createQueue(150);
 const TRENDING_SUBJECTS = ['subject:fiction', 'subject:fantasy', 'subject:mystery'];
 
+// no "is textbook" field exists, so this is a heuristic, not a guarantee
+const TEXTBOOK_PATTERN = /\b(textbooks?|workbook|study guide|solutions? manual|student edition|lecture notes?|instructor'?s? (guide|manual))\b/i;
+const TEXTBOOK_CATEGORIES = new Set(['study aids', 'education']);
+
+function isLikelyTextbook(info) {
+  if (TEXTBOOK_PATTERN.test(`${info.title ?? ''} ${info.subtitle ?? ''}`)) return true;
+  return (info.categories ?? []).some((c) => TEXTBOOK_CATEGORIES.has(c.toLowerCase()));
+}
+
 function normalize(volume) {
   const info = volume.volumeInfo ?? {};
   const categoryTags = (info.categories ?? []).map((c) => ({ value: c, type: 'genre' }));
@@ -34,15 +43,16 @@ function keyParam() {
   return config.googleBooksApiKey ? `&key=${config.googleBooksApiKey}` : '';
 }
 
-export async function searchBooks(query, limit = 15) {
-  const url = `${BASE_URL}?q=${encodeURIComponent(query)}&maxResults=${limit}${keyParam()}`;
+export async function searchBooks(query, limit = 15, page = 1) {
+  const startIndex = (page - 1) * limit;
+  const url = `${BASE_URL}?q=${encodeURIComponent(query)}&maxResults=${limit}&startIndex=${startIndex}${keyParam()}`;
   const data = await queue.enqueue(() => fetchJsonWithRetry(url));
-  return (data.items ?? []).map(normalize);
+  return (data.items ?? []).filter((v) => !isLikelyTextbook(v.volumeInfo ?? {})).map(normalize);
 }
 
 export async function trendingBooks(limit = 15) {
   const subject = TRENDING_SUBJECTS[Math.floor(Math.random() * TRENDING_SUBJECTS.length)];
   const url = `${BASE_URL}?q=${encodeURIComponent(subject)}&orderBy=newest&maxResults=${limit}${keyParam()}`;
   const data = await queue.enqueue(() => fetchJsonWithRetry(url));
-  return (data.items ?? []).map(normalize);
+  return (data.items ?? []).filter((v) => !isLikelyTextbook(v.volumeInfo ?? {})).map(normalize);
 }

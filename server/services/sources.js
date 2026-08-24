@@ -1,4 +1,4 @@
-import { searchAnime, trendingAnime, searchManga, trendingManga } from './jikan.js';
+import { searchAnime, trendingAnime, searchManga, trendingManga } from './anilist.js';
 import { searchGames, trendingGames } from './rawg.js';
 import { searchBooks, trendingBooks } from './googleBooks.js';
 import { searchMovies, trendingMovies } from './tmdb.js';

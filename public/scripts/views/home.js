@@ -38,9 +38,6 @@ export async function homeView(root, params, isCurrent) {
     root.innerHTML = `
       <div class="panel">
         <h1 style="font-size:20px;margin:0 0 10px;">welcome to recc.</h1>
-        <p>Track anime, manga, movies, games, books, and visual novels in one place, favorite the
-        ones you love, and get recommendations built from what you've favorited &mdash; across all
-        of them.</p>
         <div class="source-pills">
           ${SOURCES.map((s) => `<a href="#/browse/${s}">${SOURCE_LABEL[s]}</a>`).join('')}
         </div>

@@ -6,4 +6,6 @@ export const config = {
   googleBooksApiKey: process.env.GOOGLE_BOOKS_API_KEY || '',
   tmdbApiKey: process.env.TMDB_API_KEY || '',
   databaseUrl: process.env.DATABASE_URL || 'postgres://recc:recc@localhost:5432/recc',
+  bootstrapUsername: process.env.BOOTSTRAP_USERNAME || 'admin',
+  bootstrapPassword: process.env.BOOTSTRAP_PASSWORD || 'changeme',
 };

@@ -23,7 +23,6 @@ export async function favoritesView(root, params, isCurrent) {
   function render() {
     root.innerHTML = `
       <h2 class="page-title">Favorites</h2>
-      <p class="subtle">One list, every media type. This is what your recommendations are built from.</p>
       <div class="tabs">
         <button data-filter="all" class="${filter === 'all' ? 'active' : ''}">All (${items.length})</button>
         ${SOURCES.map((s) => {

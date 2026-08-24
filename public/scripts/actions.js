@@ -1,7 +1,6 @@
 import { api } from './api.js';
 
-// Delegated click handler for card controls; calls the API then hands a patch back to `onAction`.
-// Every view shares the #app container, so remove any handler we attached before - no stacking stale ones.
+// Removes any handler we attached before, so views sharing #app don't stack stale listeners
 export function bindItemActions(container, onAction) {
   if (container._reccActionHandler) {
     container.removeEventListener('click', container._reccActionHandler);

@@ -46,9 +46,9 @@ async function normalize(movie) {
   };
 }
 
-export async function searchMovies(query, limit = 15) {
+export async function searchMovies(query, limit = 15, page = 1) {
   requireKey();
-  const url = `${BASE_URL}/search/movie?api_key=${config.tmdbApiKey}&query=${encodeURIComponent(query)}`;
+  const url = `${BASE_URL}/search/movie?api_key=${config.tmdbApiKey}&query=${encodeURIComponent(query)}&page=${page}`;
   const data = await queue.enqueue(() => fetchJsonWithRetry(url));
   return Promise.all((data.results ?? []).slice(0, limit).map(normalize));
 }

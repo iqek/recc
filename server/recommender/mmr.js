@@ -1,7 +1,6 @@
 import { cosineSimilarity } from './similarity.js';
 
-// Maximal Marginal Relevance (Carbonell & Goldstein, 1998): balances relevance against redundancy with past picks.
-// lambda near 1 = pure relevance, near 0 = prioritizes variety.
+// Maximal Marginal Relevance: balances relevance against redundancy (lambda near 1 = relevance, near 0 = variety)
 export function mmrRerank(scored, vectorOf, count, lambda = 0.75) {
   const pool = [...scored];
   const selected = [];

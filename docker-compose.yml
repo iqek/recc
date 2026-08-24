@@ -7,9 +7,7 @@ services:
       POSTGRES_PASSWORD: recc
       POSTGRES_DB: recc
     ports:
-      # Host port 5433 (not 5432) - this machine already has a native
-      # Postgres listening on 5432, and mapping onto it silently routes
-      # connections to the wrong server.
+      # 5433, not 5432 - avoids clashing with a native Postgres install on the host
       - '5433:5432'
     volumes:
       - recc-db-data:/var/lib/postgresql/data
@@ -21,13 +19,13 @@ services:
       - db
     environment:
       PORT: 3000
-      # Inside the compose network, containers reach each other by service
-      # name ("db"), not localhost - and by the container's own port (5432),
-      # not the host-mapped one (5433) above.
+      # containers reach each other by service name ("db") and its own port (5432), not the host-mapped 5433 above
       DATABASE_URL: postgres://recc:recc@db:5432/recc
       RAWG_API_KEY: ${RAWG_API_KEY}
       TMDB_API_KEY: ${TMDB_API_KEY}
       GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY}
+      BOOTSTRAP_USERNAME: ${BOOTSTRAP_USERNAME}
+      BOOTSTRAP_PASSWORD: ${BOOTSTRAP_PASSWORD}
     ports:
       - '3000:3000'
 

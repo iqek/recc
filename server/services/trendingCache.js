@@ -1,22 +1,24 @@
-import { getFreshItems, upsertItem } from '../repo.js';
+import { upsertItem, getItemsByIds } from '../repo.js';
 import { sourceClients } from './sources.js';
 
-// Trending doesn't change minute to minute, so don't hit the live API every page visit.
+// In-memory on purpose: must only ever hold real trending() results, never search results
 const TTL_MS = 30 * 60 * 1000;
-const MIN_FRESH = 10;
 const FETCH_COUNT = 15;
+const cache = new Map();
 
 export async function ensureTrendingCached(source) {
-  const since = new Date(Date.now() - TTL_MS).toISOString();
-  const fresh = await getFreshItems(source, FETCH_COUNT, since);
-  if (fresh.length >= MIN_FRESH) return fresh;
+  const cached = cache.get(source);
+  if (cached && Date.now() - cached.fetchedAt < TTL_MS) return cached.items;
 
   try {
     const results = await sourceClients[source].trending(FETCH_COUNT);
-    for (const item of results) await upsertItem(item);
+    const ids = [];
+    for (const item of results) ids.push(await upsertItem(item));
+    const items = await getItemsByIds(ids);
+    cache.set(source, { items, fetchedAt: Date.now() });
+    return items;
   } catch (err) {
     console.warn(`[trending] live fetch for ${source} failed:`, err.message);
-    return fresh; // whatever was already cached, even if thin or stale
+    return cached?.items ?? [];
   }
-  return getFreshItems(source, FETCH_COUNT, since);
 }

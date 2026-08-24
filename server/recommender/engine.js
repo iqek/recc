@@ -1,16 +1,16 @@
-import { getAllCachedItems, getFavorites } from '../repo.js';
+import { getAllCachedItems } from '../repo.js';
 import { ensureTrendingCached } from '../services/trendingCache.js';
 import { buildIdf, vectorize, tagKey } from './vectorSpace.js';
 import { cosineSimilarity, centroid, sharedKeys } from './similarity.js';
 import { mmrRerank } from './mmr.js';
-import { capPerFranchise } from './franchise.js';
+import { capPerFranchise, capPerKey, franchiseKey } from './franchise.js';
 
 const SCORE_POOL_SIZE = 30; // how many top-scored candidates go into MMR re-ranking
 const RESULT_COUNT = 10;
 const MAX_PER_FRANCHISE = 2; // how many entries of the same series can appear in one result list
+const MAX_PER_CREATOR = 3; // how many entries by the same author/studio/developer can appear
 
-// Drops the bottom slice of a pool by popularity (obscure/unofficial spam) - only when the pool is
-// big enough that cutting it won't just gut it, and never against items with no popularity data at all
+// Drops the least-popular slice of a pool (obscure/unofficial spam), only when the pool is large enough
 function filterByPopularity(items) {
   const known = items.filter((i) => i.popularity != null);
   if (known.length < 15) return items;
@@ -20,23 +20,22 @@ function filterByPopularity(items) {
 }
 
 /**
- * Build a ranked, explained recommendation list for one media source.
- *
- * 1. Candidates = cached items, minus favorites (topped up via ensureTrendingCached).
- * 2. Cold start (no favorites): just return trending, no scoring.
- * 3. Build IDF tag vectors, a taste profile from favorites, score by cosine similarity.
- * 4. Re-rank with MMR so results aren't ten near-duplicates.
- * 5. Attach the best-matching favorite + shared tags to each pick, for the "because you liked X" UI.
+ * Scores cached candidates against a taste profile built from `profileItems` - your favorites for
+ * the main Recommendations page, or one list's items for that list's own recommendations tab.
+ * `engagedItems` (everything favorited or listed anywhere) keeps those, and sequels/seasons of
+ * them, from being suggested back - a same-franchise entry isn't really a "discovery."
  */
-export async function getRecommendations(source) {
-  const favorites = await getFavorites();
-  const favoritedIds = new Set(favorites.map((f) => f.id));
+export async function getRecommendations(profileItems, engagedItems, source) {
+  const engagedIds = new Set(engagedItems.map((i) => i.id));
+  const engagedFranchises = new Set(engagedItems.map((i) => franchiseKey(i.title)).filter(Boolean));
 
   await ensureTrendingCached(source);
-  const rawCandidates = (await getAllCachedItems(source)).filter((item) => !favoritedIds.has(item.id));
+  const rawCandidates = (await getAllCachedItems(source)).filter(
+    (item) => !engagedIds.has(item.id) && !engagedFranchises.has(franchiseKey(item.title))
+  );
   const candidates = filterByPopularity(rawCandidates);
 
-  if (favorites.length === 0) {
+  if (profileItems.length === 0) {
     return trendingFallback(source, candidates, 'trending',
       'Favorite a few things to get picks tailored to your taste. Showing what is trending for now.');
   }
@@ -44,12 +43,12 @@ export async function getRecommendations(source) {
     return { source, fallback: 'empty', message: `No ${source} items cached yet - search for a few first.`, items: [] };
   }
 
-  const corpus = dedupeById([...candidates, ...favorites]);
+  const corpus = dedupeById([...candidates, ...profileItems]);
   const idf = buildIdf(corpus);
 
-  const favoriteVectors = favorites.map((f) => vectorize(f, idf));
-  const favoriteWeights = favorites.map((f) => (f.user_rating ?? 4) / 5);
-  const profile = centroid(favoriteVectors, favoriteWeights);
+  const profileVectors = profileItems.map((f) => vectorize(f, idf));
+  const profileWeights = profileItems.map((f) => (f.user_rating ?? 4) / 5);
+  const profile = centroid(profileVectors, profileWeights);
 
   const vectorCache = new Map();
   const vectorOf = (item) => {
@@ -62,38 +61,43 @@ export async function getRecommendations(source) {
     .filter((c) => c.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  // cap same-franchise spam before slicing, so a flood of one series' sequels doesn't crowd out everything else
-  const scored = capPerFranchise(rankedByScore, (c) => c.item.title, MAX_PER_FRANCHISE).slice(0, SCORE_POOL_SIZE);
+  // cap same-franchise and same-creator spam before slicing, so no one series or author crowds out everything else
+  const capped = capPerKey(
+    capPerFranchise(rankedByScore, (c) => c.item.title, MAX_PER_FRANCHISE),
+    (c) => c.item.creator?.toLowerCase() ?? null,
+    MAX_PER_CREATOR
+  );
+  const scored = capped.slice(0, SCORE_POOL_SIZE);
 
   if (scored.length === 0) {
     return trendingFallback(source, candidates, 'no-overlap',
-      `Nothing cached yet shares tags with your favorites. Showing top-rated ${source} instead.`);
+      `Nothing cached yet shares tags with these, instead here's top-rated ${source}.`);
   }
 
   const reranked = mmrRerank(scored, (c) => vectorOf(c.item), Math.min(RESULT_COUNT, scored.length));
 
   const items = reranked.map(({ item, score }) => {
     const itemVec = vectorOf(item);
-    let bestFavorite = null;
-    let bestFavoriteVec = null;
+    let bestMatch = null;
+    let bestMatchVec = null;
     let bestSim = -Infinity;
-    favorites.forEach((fav, i) => {
-      const sim = cosineSimilarity(favoriteVectors[i], itemVec);
+    profileItems.forEach((profileItem, i) => {
+      const sim = cosineSimilarity(profileVectors[i], itemVec);
       if (sim > bestSim) {
         bestSim = sim;
-        bestFavorite = fav;
-        bestFavoriteVec = favoriteVectors[i];
+        bestMatch = profileItem;
+        bestMatchVec = profileVectors[i];
       }
     });
-    const because = bestFavorite
-      ? sharedKeys(bestFavoriteVec, itemVec).map((key) => labelFor(item, key) ?? labelFor(bestFavorite, key))
+    const because = bestMatch
+      ? sharedKeys(bestMatchVec, itemVec).map((key) => labelFor(item, key) ?? labelFor(bestMatch, key))
       : [];
 
     return {
       item,
       score,
       because,
-      matchedFavorite: bestFavorite ? { id: bestFavorite.id, title: bestFavorite.title } : null,
+      matchedItem: bestMatch ? { id: bestMatch.id, title: bestMatch.title } : null,
     };
   });
 
@@ -111,7 +115,7 @@ function trendingFallback(source, candidates, fallback, message) {
       MAX_PER_FRANCHISE
     )
       .slice(0, RESULT_COUNT)
-      .map((item) => ({ item, score: null, because: [], matchedFavorite: null })),
+      .map((item) => ({ item, score: null, because: [], matchedItem: null })),
   };
 }
 

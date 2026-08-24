@@ -17,7 +17,7 @@ export function createRouter(routes, root, navSelector) {
     return null;
   }
 
-  // A view's first fetch can still be in flight after navigating away - isCurrent() lets it skip its first DOM write.
+  // lets a view detect it was navigated away from before its first render
   let renderId = 0;
 
   async function renderRoute() {
@@ -25,6 +25,8 @@ export function createRouter(routes, root, navSelector) {
     const found = match(hash) ?? { view: compiled[0].view, params: {} };
     const id = ++renderId;
     const isCurrent = () => id === renderId;
+
+    document.body.classList.toggle('auth-screen', hash === '#/login');
 
     const prefix = (h) => h.split('/').slice(0, 2).join('/');
     document.querySelectorAll(`${navSelector} a`).forEach((link) => {

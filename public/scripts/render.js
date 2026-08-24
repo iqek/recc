@@ -64,15 +64,6 @@ function listPicker(item, lists) {
   `;
 }
 
-/**
- * @param {object} item - API item shape
- * @param {object} opts
- * @param {boolean} opts.showListPicker - show the "add to list(s)" control (needs opts.lists)
- * @param {object[]} opts.lists - all lists, for the picker
- * @param {boolean} opts.showFavorite - show favorite toggle star button
- * @param {boolean} opts.showRating - show 1-5 rating stars
- * @param {object|null} opts.recommendation - { score, because, becauseOf, fallback }
- */
 export function itemCard(item, opts = {}) {
   const media = item.imageUrl
     ? `<div class="card-media" style="background-image:url('${escapeHtml(item.imageUrl)}')"></div>`
@@ -137,4 +128,30 @@ export function grid(items, opts) {
     return `<div class="empty-state">Nothing here yet.</div>`;
   }
   return `<div class="grid">${items.map((item) => itemCard(item, opts)).join('')}</div>`;
+}
+
+// Shared by the global Recommendations page and each list's Recommendations tab
+export function recommendationSection(source, section, lists) {
+  const cards = section.items
+    .map((item) =>
+      itemCard(item, {
+        showListPicker: true,
+        lists,
+        showFavorite: true,
+        recommendation: {
+          score: item.score,
+          because: item.because,
+          becauseOf: item.becauseOf,
+          fallback: section.fallback,
+        },
+      })
+    )
+    .join('');
+
+  return `
+    <h3 class="section-title">${SOURCE_LABEL[source]}</h3>
+    ${section.fallback ? `<div class="trending-flag">${escapeHtml(section.fallback)}</div>` : ''}
+    ${section.message ? `<div class="notice">${escapeHtml(section.message)}</div>` : ''}
+    ${section.items.length ? `<div class="grid">${cards}</div>` : `<div class="empty-state">Nothing to recommend yet.</div>`}
+  `;
 }

@@ -62,6 +62,17 @@ a {
   flex-wrap: wrap;
 }
 
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.auth-screen .site-header,
+body.auth-screen .site-footer {
+  display: none;
+}
+
 .logo {
   font-family: var(--font-pixel);
   font-size: 15px;

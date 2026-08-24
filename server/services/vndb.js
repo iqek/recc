@@ -44,8 +44,8 @@ async function post(body) {
   );
 }
 
-export async function searchVisualNovels(query, limit = 15) {
-  const data = await post({ filters: ['search', '=', query], results: limit, fields: FIELDS });
+export async function searchVisualNovels(query, limit = 15, page = 1) {
+  const data = await post({ filters: ['search', '=', query], results: limit, page, fields: FIELDS });
   return (data.results ?? []).map(normalize);
 }
 
